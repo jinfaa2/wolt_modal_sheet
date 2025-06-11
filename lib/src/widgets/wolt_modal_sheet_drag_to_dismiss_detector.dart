@@ -51,22 +51,12 @@ class WoltModalSheetDragToDismissDetector extends StatelessWidget {
             _handleHorizontalDragUpdate(context, notification.dragDetails!);
           }
         }
-        if (notification is ScrollUpdateNotification &&
-            notification.metrics.outOfRange &&
+        if (notification is ScrollEndNotification &&
             notification.dragDetails != null) {
           if (isVerticalDismissAllowed) {
-            _handleVerticalDragUpdate(notification.dragDetails!);
+            _handleVerticalDragEnd(context, notification.dragDetails!);
           } else if (isHorizontalDismissAllowed) {
-            _handleHorizontalDragUpdate(context, notification.dragDetails!);
-          }
-        }
-        if (notification is ScrollEndNotification) {
-          final details = notification.dragDetails ??
-              DragEndDetails(velocity: Velocity.zero);
-          if (isVerticalDismissAllowed) {
-            _handleVerticalDragEnd(context, details);
-          } else if (isHorizontalDismissAllowed) {
-            _handleHorizontalDragEnd(context, details);
+            _handleHorizontalDragEnd(context, notification.dragDetails!);
           }
         }
         return true;
@@ -102,9 +92,8 @@ class WoltModalSheetDragToDismissDetector extends StatelessWidget {
       _ => _animationController.value,
     };
 
-    final clamped = newValue.clamp(0.0, 1.0);
-    if (clamped >= 0.01) {
-      _animationController.value = clamped;
+    if (newValue >= 0.01) {
+      _animationController.value = newValue;
     }
   }
 
@@ -187,9 +176,8 @@ class WoltModalSheetDragToDismissDetector extends StatelessWidget {
         break;
     }
 
-    final clamped = newValue.clamp(0.0, 1.0);
-    if (clamped >= 0.01) {
-      _animationController.value = clamped;
+    if (newValue >= 0.01) {
+      _animationController.value = newValue;
     }
   }
 
