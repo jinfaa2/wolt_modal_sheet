@@ -116,3 +116,4 @@ lib/generated_plugin_registrant.dart
 # Local Flutter SDK
 flutter/
 flutter_linux_*.tar.xz
+
