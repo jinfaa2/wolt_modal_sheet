@@ -56,8 +56,8 @@ class WoltModalSheetDragToDismissDetector extends StatelessWidget {
           if (isVerticalDismissAllowed) {
             final metrics = notification.metrics;
             final atEdge = _dismissDirection == WoltModalDismissDirection.down
-                ? metrics.extentBefore == 0.0
-                : metrics.extentAfter == 0.0;
+                ? metrics.extentBefore <= 0.0
+                : metrics.extentAfter <= 0.0;
             if (atEdge) {
               _handleVerticalDragUpdate(notification.dragDetails!);
             }
@@ -65,8 +65,8 @@ class WoltModalSheetDragToDismissDetector extends StatelessWidget {
             final metrics = notification.metrics;
             final atEdge =
                 _dismissDirection == WoltModalDismissDirection.startToEnd
-                ? metrics.extentBefore == 0.0
-                : metrics.extentAfter == 0.0;
+                    ? metrics.extentBefore <= 0.0
+                    : metrics.extentAfter <= 0.0;
             if (atEdge) {
               _handleHorizontalDragUpdate(context, notification.dragDetails!);
             }
