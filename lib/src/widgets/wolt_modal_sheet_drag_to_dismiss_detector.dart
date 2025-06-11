@@ -93,7 +93,7 @@ class WoltModalSheetDragToDismissDetector extends StatelessWidget {
     };
 
     if (newValue >= 0.01) {
-      _animationController.value = newValue;
+      _animationController.value = newValue.clamp(0.0, 1.0);
     }
   }
 
@@ -177,7 +177,7 @@ class WoltModalSheetDragToDismissDetector extends StatelessWidget {
     }
 
     if (newValue >= 0.01) {
-      _animationController.value = newValue;
+      _animationController.value = newValue.clamp(0.0, 1.0);
     }
   }
 
