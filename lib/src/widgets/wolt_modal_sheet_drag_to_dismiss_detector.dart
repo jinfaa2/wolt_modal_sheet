@@ -55,6 +55,19 @@ class _WoltModalSheetDragToDismissDetectorState
 
   double get _childWidth => _renderBox.size.width;
 
+  bool _isAtDismissEdge(ScrollMetrics metrics) {
+    switch (_dismissDirection) {
+      case WoltModalDismissDirection.down:
+      case WoltModalDismissDirection.startToEnd:
+        return metrics.extentBefore == 0;
+      case WoltModalDismissDirection.up:
+      case WoltModalDismissDirection.endToStart:
+        return metrics.extentAfter == 0;
+      default:
+        return metrics.atEdge;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isVerticalDismissAllowed = _dismissDirection?.isVertical ?? false;
@@ -62,7 +75,12 @@ class _WoltModalSheetDragToDismissDetectorState
 
     return NotificationListener<ScrollNotification>(
       onNotification: (notification) {
-        if (notification is OverscrollNotification) {
+        if (notification is ScrollStartNotification) {
+          if (notification.dragDetails != null &&
+              _isAtDismissEdge(notification.metrics)) {
+            _isDragFromScrollableActive = true;
+          }
+        } else if (notification is OverscrollNotification) {
           final details = notification.dragDetails;
           if (details != null) {
             _isDragFromScrollableActive = true;
