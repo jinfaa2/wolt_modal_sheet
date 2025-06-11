@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:wolt_modal_sheet/wolt_modal_sheet.dart';
 
-class WoltModalSheetDragToDismissDetector extends StatelessWidget {
+class WoltModalSheetDragToDismissDetector extends StatefulWidget {
   const WoltModalSheetDragToDismissDetector({
     super.key,
     required this.child,
@@ -17,12 +17,22 @@ class WoltModalSheetDragToDismissDetector extends StatelessWidget {
   final VoidCallback? onModalDismissedWithDrag;
   final GlobalKey modalContentKey;
 
-  AnimationController get _animationController => route.animationController!;
+  @override
+  State<WoltModalSheetDragToDismissDetector> createState() =>
+      _WoltModalSheetDragToDismissDetectorState();
+}
+
+class _WoltModalSheetDragToDismissDetectorState
+    extends State<WoltModalSheetDragToDismissDetector> {
+  bool _scrollDragActive = false;
+
+  AnimationController get _animationController =>
+      widget.route.animationController!;
 
   WoltModalDismissDirection? get _dismissDirection =>
-      modalType.dismissDirection;
+      widget.modalType.dismissDirection;
 
-  double get _minFlingVelocity => modalType.minFlingVelocity;
+  double get _minFlingVelocity => widget.modalType.minFlingVelocity;
 
   bool get _isDismissUnderway =>
       _animationController.status == AnimationStatus.reverse;
@@ -30,7 +40,7 @@ class WoltModalSheetDragToDismissDetector extends StatelessWidget {
   bool get _isDismissed => _animationController.isDismissed;
 
   RenderBox get _renderBox =>
-      modalContentKey.currentContext!.findRenderObject()! as RenderBox;
+      widget.modalContentKey.currentContext!.findRenderObject()! as RenderBox;
 
   double get _childHeight => _renderBox.size.height;
 
@@ -45,6 +55,7 @@ class WoltModalSheetDragToDismissDetector extends StatelessWidget {
       onNotification: (notification) {
         if (notification is OverscrollNotification &&
             notification.dragDetails != null) {
+          _scrollDragActive = true;
           if (isVerticalDismissAllowed) {
             _handleVerticalDragUpdate(notification.dragDetails!);
           } else if (isHorizontalDismissAllowed) {
@@ -53,31 +64,42 @@ class WoltModalSheetDragToDismissDetector extends StatelessWidget {
         }
         if (notification is ScrollUpdateNotification &&
             notification.dragDetails != null) {
-          if (isVerticalDismissAllowed) {
+          if (_scrollDragActive) {
+            if (isVerticalDismissAllowed) {
+              _handleVerticalDragUpdate(notification.dragDetails!);
+            } else if (isHorizontalDismissAllowed) {
+              _handleHorizontalDragUpdate(context, notification.dragDetails!);
+            }
+          } else if (isVerticalDismissAllowed) {
             final metrics = notification.metrics;
             final atEdge = _dismissDirection == WoltModalDismissDirection.down
                 ? metrics.extentBefore <= 0.0
                 : metrics.extentAfter <= 0.0;
             if (atEdge) {
+              _scrollDragActive = true;
               _handleVerticalDragUpdate(notification.dragDetails!);
             }
           } else if (isHorizontalDismissAllowed) {
             final metrics = notification.metrics;
             final atEdge =
                 _dismissDirection == WoltModalDismissDirection.startToEnd
-                    ? metrics.extentBefore <= 0.0
-                    : metrics.extentAfter <= 0.0;
+                ? metrics.extentBefore <= 0.0
+                : metrics.extentAfter <= 0.0;
             if (atEdge) {
+              _scrollDragActive = true;
               _handleHorizontalDragUpdate(context, notification.dragDetails!);
             }
           }
         }
         if (notification is ScrollEndNotification &&
             notification.dragDetails != null) {
-          if (isVerticalDismissAllowed) {
-            _handleVerticalDragEnd(context, notification.dragDetails!);
-          } else if (isHorizontalDismissAllowed) {
-            _handleHorizontalDragEnd(context, notification.dragDetails!);
+          if (_scrollDragActive) {
+            if (isVerticalDismissAllowed) {
+              _handleVerticalDragEnd(context, notification.dragDetails!);
+            } else if (isHorizontalDismissAllowed) {
+              _handleHorizontalDragEnd(context, notification.dragDetails!);
+            }
+            _scrollDragActive = false;
           }
         }
         return true;
@@ -96,7 +118,7 @@ class WoltModalSheetDragToDismissDetector extends StatelessWidget {
         onHorizontalDragEnd: isHorizontalDismissAllowed
             ? (details) => _handleHorizontalDragEnd(context, details)
             : null,
-        child: child,
+        child: widget.child,
       ),
     );
   }
@@ -148,7 +170,7 @@ class WoltModalSheetDragToDismissDetector extends StatelessWidget {
       }
     }
 
-    if (_animationController.value < modalType.closeProgressThreshold) {
+    if (_animationController.value < widget.modalType.closeProgressThreshold) {
       if (_animationController.value > 0.0) {
         _animationController.fling(velocity: -1.0);
       }
@@ -157,8 +179,8 @@ class WoltModalSheetDragToDismissDetector extends StatelessWidget {
       _animationController.forward();
     }
 
-    if (isClosing && route.isCurrent) {
-      final onModalDismissedWithDrag = this.onModalDismissedWithDrag;
+    if (isClosing && widget.route.isCurrent) {
+      final onModalDismissedWithDrag = widget.onModalDismissedWithDrag;
       if (onModalDismissedWithDrag != null) {
         onModalDismissedWithDrag();
       } else {
@@ -245,15 +267,16 @@ class WoltModalSheetDragToDismissDetector extends StatelessWidget {
           }
         }
       }
-    } else if (_animationController.value < modalType.closeProgressThreshold) {
+    } else if (_animationController.value <
+        widget.modalType.closeProgressThreshold) {
       _animationController.fling(velocity: -1.0);
       isClosing = true;
     } else {
       _animationController.forward();
     }
 
-    if (isClosing && route.isCurrent) {
-      final onModalDismissedWithDrag = this.onModalDismissedWithDrag;
+    if (isClosing && widget.route.isCurrent) {
+      final onModalDismissedWithDrag = widget.onModalDismissedWithDrag;
       if (onModalDismissedWithDrag != null) {
         onModalDismissedWithDrag();
       } else {
