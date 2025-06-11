@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
 import 'package:wolt_modal_sheet/wolt_modal_sheet.dart';
 
 class WoltModalSheetDragToDismissDetector extends StatefulWidget {
@@ -25,6 +26,8 @@ class WoltModalSheetDragToDismissDetector extends StatefulWidget {
 class _WoltModalSheetDragToDismissDetectorState
     extends State<WoltModalSheetDragToDismissDetector> {
   bool _isDragFromScrollableActive = false;
+  VelocityTracker? _velocityTracker;
+  DateTime? _startTime;
 
   WoltModalType get modalType => widget.modalType;
 
@@ -54,6 +57,21 @@ class _WoltModalSheetDragToDismissDetectorState
   double get _childHeight => _renderBox.size.height;
 
   double get _childWidth => _renderBox.size.width;
+
+  PointerDeviceKind _defaultPointerDeviceKind(BuildContext context) {
+    final platform = Theme.of(context).platform;
+    switch (platform) {
+      case TargetPlatform.iOS:
+      case TargetPlatform.android:
+        return PointerDeviceKind.touch;
+      case TargetPlatform.linux:
+      case TargetPlatform.macOS:
+      case TargetPlatform.windows:
+        return PointerDeviceKind.mouse;
+      case TargetPlatform.fuchsia:
+        return PointerDeviceKind.unknown;
+    }
+  }
 
   void _handleVerticalScrollDelta(double delta) {
     if (_isDismissUnderway || _isDismissed) return;
@@ -117,37 +135,80 @@ class _WoltModalSheetDragToDismissDetectorState
 
     return NotificationListener<ScrollNotification>(
       onNotification: (notification) {
-        if (notification is ScrollStartNotification) {
-          if (!_isDragFromScrollableActive) {
-            _isDragFromScrollableActive =
-                notification.dragDetails != null &&
-                _isAtDismissEdge(notification.metrics);
-          }
+        final metrics = notification.metrics;
+        bool atEdge = _isAtDismissEdge(metrics);
+
+        if (notification is ScrollStartNotification && atEdge) {
+          _isDragFromScrollableActive = true;
+          _startTime = DateTime.now();
+          _velocityTracker =
+              VelocityTracker.withKind(_defaultPointerDeviceKind(context));
         } else if (notification is ScrollUpdateNotification) {
           final delta = notification.scrollDelta ?? 0.0;
-          if (notification.metrics.outOfRange || _isDragFromScrollableActive) {
+          final offset = metrics.pixels;
+          if (metrics.outOfRange || _isDragFromScrollableActive) {
             if (isVerticalDismissAllowed) {
               _handleVerticalScrollDelta(delta);
             } else if (isHorizontalDismissAllowed) {
               _handleHorizontalScrollDelta(context, delta);
             }
+            if (_velocityTracker != null && _startTime != null) {
+              final duration = DateTime.now().difference(_startTime!);
+              final position = isVerticalDismissAllowed
+                  ? Offset(0, offset)
+                  : Offset(offset, 0);
+              _velocityTracker!.addPosition(duration, position);
+            }
           }
         } else if (notification is OverscrollNotification) {
+          final overscroll = notification.overscroll;
+          final offset = metrics.pixels;
+          if (!_isDragFromScrollableActive) {
+            _startTime = DateTime.now();
+            _velocityTracker =
+                VelocityTracker.withKind(_defaultPointerDeviceKind(context));
+          }
           _isDragFromScrollableActive = true;
           if (isVerticalDismissAllowed) {
-            _handleVerticalScrollDelta(notification.overscroll);
+            _handleVerticalScrollDelta(overscroll);
           } else if (isHorizontalDismissAllowed) {
-            _handleHorizontalScrollDelta(context, notification.overscroll);
+            _handleHorizontalScrollDelta(context, overscroll);
+          }
+          if (_velocityTracker != null && _startTime != null) {
+            final duration = DateTime.now().difference(_startTime!);
+            final position = isVerticalDismissAllowed
+                ? Offset(0, offset)
+                : Offset(offset, 0);
+            _velocityTracker!.addPosition(duration, position);
           }
         } else if (notification is ScrollEndNotification) {
-          if (notification.dragDetails != null && _isDragFromScrollableActive) {
+          if (_isDragFromScrollableActive) {
+            double velocity;
+            if (notification.dragDetails != null) {
+              velocity = isVerticalDismissAllowed
+                  ? notification.dragDetails!.velocity.pixelsPerSecond.dy
+                  : notification.dragDetails!.velocity.pixelsPerSecond.dx;
+            } else {
+              velocity = isVerticalDismissAllowed
+                  ? _velocityTracker?.getVelocity().pixelsPerSecond.dy ?? 0.0
+                  : _velocityTracker?.getVelocity().pixelsPerSecond.dx ?? 0.0;
+            }
+            final details = isVerticalDismissAllowed
+                ? DragEndDetails(
+                    velocity: Velocity(pixelsPerSecond: Offset(0, velocity)),
+                  )
+                : DragEndDetails(
+                    velocity: Velocity(pixelsPerSecond: Offset(velocity, 0)),
+                  );
             if (isVerticalDismissAllowed) {
-              _handleVerticalDragEnd(context, notification.dragDetails!);
+              _handleVerticalDragEnd(context, details);
             } else if (isHorizontalDismissAllowed) {
-              _handleHorizontalDragEnd(context, notification.dragDetails!);
+              _handleHorizontalDragEnd(context, details);
             }
           }
           _isDragFromScrollableActive = false;
+          _velocityTracker = null;
+          _startTime = null;
         }
         return true;
       },
