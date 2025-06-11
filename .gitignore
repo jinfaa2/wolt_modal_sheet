@@ -1,3 +1,8 @@
+
+# Local Flutter SDK
+/flutter/
+/flutter_*
+
 # Miscellaneous
 *.class
 *.log

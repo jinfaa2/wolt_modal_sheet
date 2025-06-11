@@ -51,6 +51,27 @@ class WoltModalSheetDragToDismissDetector extends StatelessWidget {
             _handleHorizontalDragUpdate(context, notification.dragDetails!);
           }
         }
+        if (notification is ScrollUpdateNotification &&
+            notification.dragDetails != null) {
+          if (isVerticalDismissAllowed) {
+            final metrics = notification.metrics;
+            final atEdge = _dismissDirection == WoltModalDismissDirection.down
+                ? metrics.extentBefore == 0.0
+                : metrics.extentAfter == 0.0;
+            if (atEdge) {
+              _handleVerticalDragUpdate(notification.dragDetails!);
+            }
+          } else if (isHorizontalDismissAllowed) {
+            final metrics = notification.metrics;
+            final atEdge =
+                _dismissDirection == WoltModalDismissDirection.startToEnd
+                ? metrics.extentBefore == 0.0
+                : metrics.extentAfter == 0.0;
+            if (atEdge) {
+              _handleHorizontalDragUpdate(context, notification.dragDetails!);
+            }
+          }
+        }
         if (notification is ScrollEndNotification &&
             notification.dragDetails != null) {
           if (isVerticalDismissAllowed) {
