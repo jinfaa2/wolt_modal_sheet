@@ -124,6 +124,25 @@ class _WoltModalSheetDragToDismissDetectorState
             _handleHorizontalDragUpdate(context, notification.dragDetails!);
           }
         }
+        if (notification is ScrollStartNotification) {
+          final metrics = notification.metrics;
+          if (isVerticalDismissAllowed) {
+            final atEdge = _dismissDirection == WoltModalDismissDirection.down
+                ? metrics.extentBefore <= 0.0
+                : metrics.extentAfter <= 0.0;
+            if (atEdge) {
+              _scrollDragActive = true;
+            }
+          } else if (isHorizontalDismissAllowed) {
+            final atEdge =
+                _dismissDirection == WoltModalDismissDirection.startToEnd
+                    ? metrics.extentBefore <= 0.0
+                    : metrics.extentAfter <= 0.0;
+            if (atEdge) {
+              _scrollDragActive = true;
+            }
+          }
+        }
         if (notification is ScrollUpdateNotification &&
             notification.dragDetails != null) {
           if (_scrollDragActive) {
