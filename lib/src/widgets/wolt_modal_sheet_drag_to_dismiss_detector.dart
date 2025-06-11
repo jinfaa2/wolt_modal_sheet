@@ -63,8 +63,9 @@ class _WoltModalSheetDragToDismissDetectorState
       WoltModalDismissDirection.up => _animationController.value + deltaDiff,
       _ => _animationController.value,
     };
-    if (newValue >= 0.01) {
-      _animationController.value = newValue;
+    final clamped = newValue.clamp(0.0, 1.0);
+    if (clamped >= 0.01) {
+      _animationController.value = clamped;
     }
   }
 
@@ -90,8 +91,9 @@ class _WoltModalSheetDragToDismissDetectorState
       default:
         break;
     }
-    if (newValue >= 0.01) {
-      _animationController.value = newValue;
+    final clamped = newValue.clamp(0.0, 1.0);
+    if (clamped >= 0.01) {
+      _animationController.value = clamped;
     }
   }
 
@@ -116,9 +118,11 @@ class _WoltModalSheetDragToDismissDetectorState
     return NotificationListener<ScrollNotification>(
       onNotification: (notification) {
         if (notification is ScrollStartNotification) {
-          _isDragFromScrollableActive =
-              notification.dragDetails != null &&
-              _isAtDismissEdge(notification.metrics);
+          if (!_isDragFromScrollableActive) {
+            _isDragFromScrollableActive =
+                notification.dragDetails != null &&
+                _isAtDismissEdge(notification.metrics);
+          }
         } else if (notification is ScrollUpdateNotification) {
           final delta = notification.scrollDelta ?? 0.0;
           if (notification.metrics.outOfRange || _isDragFromScrollableActive) {
@@ -178,8 +182,9 @@ class _WoltModalSheetDragToDismissDetectorState
       _ => _animationController.value,
     };
 
-    if (newValue >= 0.01) {
-      _animationController.value = newValue;
+    final clamped = newValue.clamp(0.0, 1.0);
+    if (clamped >= 0.01) {
+      _animationController.value = clamped;
     }
   }
 
@@ -262,8 +267,9 @@ class _WoltModalSheetDragToDismissDetectorState
         break;
     }
 
-    if (newValue >= 0.01) {
-      _animationController.value = newValue;
+    final clamped = newValue.clamp(0.0, 1.0);
+    if (clamped >= 0.01) {
+      _animationController.value = clamped;
     }
   }
 
