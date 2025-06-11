@@ -83,12 +83,12 @@ class _WoltModalSheetDragToDismissDetectorState
           }
         } else if (notification is ScrollEndNotification) {
           final details = notification.dragDetails;
-          if (details != null) {
-            if (isVerticalDismissAllowed) {
-              _handleVerticalDragEnd(context, details);
-            } else if (isHorizontalDismissAllowed) {
-              _handleHorizontalDragEnd(context, details);
-            }
+          final effectiveDetails = details ??
+              DragEndDetails(primaryVelocity: 0, velocity: Velocity.zero);
+          if (isVerticalDismissAllowed) {
+            _handleVerticalDragEnd(context, effectiveDetails);
+          } else if (isHorizontalDismissAllowed) {
+            _handleHorizontalDragEnd(context, effectiveDetails);
           }
           _isDragFromScrollableActive = false;
         }
