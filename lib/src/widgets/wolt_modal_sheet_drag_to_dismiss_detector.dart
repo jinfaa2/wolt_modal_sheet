@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:wolt_modal_sheet/wolt_modal_sheet.dart';
 
-class WoltModalSheetDragToDismissDetector extends StatelessWidget {
+class WoltModalSheetDragToDismissDetector extends StatefulWidget {
   const WoltModalSheetDragToDismissDetector({
     super.key,
     required this.child,
@@ -16,6 +16,25 @@ class WoltModalSheetDragToDismissDetector extends StatelessWidget {
   final WoltModalSheetRoute route;
   final VoidCallback? onModalDismissedWithDrag;
   final GlobalKey modalContentKey;
+
+  @override
+  State<WoltModalSheetDragToDismissDetector> createState() =>
+      _WoltModalSheetDragToDismissDetectorState();
+}
+
+class _WoltModalSheetDragToDismissDetectorState
+    extends State<WoltModalSheetDragToDismissDetector> {
+  bool _isDragFromScrollableActive = false;
+
+  WoltModalType get modalType => widget.modalType;
+
+  Widget get child => widget.child;
+
+  WoltModalSheetRoute get route => widget.route;
+
+  VoidCallback? get onModalDismissedWithDrag => widget.onModalDismissedWithDrag;
+
+  GlobalKey get modalContentKey => widget.modalContentKey;
 
   AnimationController get _animationController => route.animationController!;
 
@@ -46,6 +65,7 @@ class WoltModalSheetDragToDismissDetector extends StatelessWidget {
         if (notification is OverscrollNotification) {
           final details = notification.dragDetails;
           if (details != null) {
+            _isDragFromScrollableActive = true;
             if (isVerticalDismissAllowed) {
               _handleVerticalDragUpdate(details);
             } else if (isHorizontalDismissAllowed) {
@@ -54,33 +74,11 @@ class WoltModalSheetDragToDismissDetector extends StatelessWidget {
           }
         } else if (notification is ScrollUpdateNotification) {
           final details = notification.dragDetails;
-          if (details != null) {
-            final metrics = notification.metrics;
-            final outOfRange = metrics.pixels < metrics.minScrollExtent ||
-                metrics.pixels > metrics.maxScrollExtent;
-
-            bool atLeadingEdge = false;
-            bool atTrailingEdge = false;
+          if (details != null && _isDragFromScrollableActive) {
             if (isVerticalDismissAllowed) {
-              final delta = details.primaryDelta!;
-              atLeadingEdge =
-                  metrics.pixels <= metrics.minScrollExtent && delta > 0;
-              atTrailingEdge =
-                  metrics.pixels >= metrics.maxScrollExtent && delta < 0;
+              _handleVerticalDragUpdate(details);
             } else if (isHorizontalDismissAllowed) {
-              final delta = details.primaryDelta!;
-              atLeadingEdge =
-                  metrics.pixels <= metrics.minScrollExtent && delta > 0;
-              atTrailingEdge =
-                  metrics.pixels >= metrics.maxScrollExtent && delta < 0;
-            }
-
-            if (outOfRange || atLeadingEdge || atTrailingEdge) {
-              if (isVerticalDismissAllowed) {
-                _handleVerticalDragUpdate(details);
-              } else if (isHorizontalDismissAllowed) {
-                _handleHorizontalDragUpdate(context, details);
-              }
+              _handleHorizontalDragUpdate(context, details);
             }
           }
         } else if (notification is ScrollEndNotification) {
@@ -92,6 +90,7 @@ class WoltModalSheetDragToDismissDetector extends StatelessWidget {
               _handleHorizontalDragEnd(context, details);
             }
           }
+          _isDragFromScrollableActive = false;
         }
         return true;
       },
