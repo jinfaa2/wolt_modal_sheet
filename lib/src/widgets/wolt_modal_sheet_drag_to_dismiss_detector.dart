@@ -41,22 +41,40 @@ class WoltModalSheetDragToDismissDetector extends StatelessWidget {
     final isVerticalDismissAllowed = _dismissDirection?.isVertical ?? false;
     final isHorizontalDismissAllowed = _dismissDirection?.isHorizontal ?? false;
 
-    return NotificationListener(
+    return NotificationListener<ScrollNotification>(
       onNotification: (notification) {
-        if (notification is OverscrollNotification &&
-            notification.dragDetails != null) {
-          if (isVerticalDismissAllowed) {
-            _handleVerticalDragUpdate(notification.dragDetails!);
-          } else if (isHorizontalDismissAllowed) {
-            _handleHorizontalDragUpdate(context, notification.dragDetails!);
+        if (notification is OverscrollNotification) {
+          final details = notification.dragDetails;
+          if (details != null) {
+            if (isVerticalDismissAllowed) {
+              _handleVerticalDragUpdate(details);
+            } else if (isHorizontalDismissAllowed) {
+              _handleHorizontalDragUpdate(context, details);
+            }
           }
-        }
-        if (notification is ScrollEndNotification &&
-            notification.dragDetails != null) {
-          if (isVerticalDismissAllowed) {
-            _handleVerticalDragEnd(context, notification.dragDetails!);
-          } else if (isHorizontalDismissAllowed) {
-            _handleHorizontalDragEnd(context, notification.dragDetails!);
+        } else if (notification is ScrollUpdateNotification) {
+          final details = notification.dragDetails;
+          if (details != null) {
+            final metrics = notification.metrics;
+            final outOfRange =
+                metrics.pixels < metrics.minScrollExtent ||
+                    metrics.pixels > metrics.maxScrollExtent;
+            if (outOfRange) {
+              if (isVerticalDismissAllowed) {
+                _handleVerticalDragUpdate(details);
+              } else if (isHorizontalDismissAllowed) {
+                _handleHorizontalDragUpdate(context, details);
+              }
+            }
+          }
+        } else if (notification is ScrollEndNotification) {
+          final details = notification.dragDetails;
+          if (details != null) {
+            if (isVerticalDismissAllowed) {
+              _handleVerticalDragEnd(context, details);
+            } else if (isHorizontalDismissAllowed) {
+              _handleHorizontalDragEnd(context, details);
+            }
           }
         }
         return true;
