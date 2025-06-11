@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
 import 'package:wolt_modal_sheet/wolt_modal_sheet.dart';
 
 class WoltModalSheetDragToDismissDetector extends StatelessWidget {
@@ -61,20 +62,34 @@ class WoltModalSheetDragToDismissDetector extends StatelessWidget {
         }
         return true;
       },
-      child: GestureDetector(
+      child: RawGestureDetector(
         excludeFromSemantics: true,
-        onVerticalDragUpdate: isVerticalDismissAllowed
-            ? (details) => _handleVerticalDragUpdate(details)
-            : null,
-        onVerticalDragEnd: isVerticalDismissAllowed
-            ? (details) => _handleVerticalDragEnd(context, details)
-            : null,
-        onHorizontalDragUpdate: isHorizontalDismissAllowed
-            ? (details) => _handleHorizontalDragUpdate(context, details)
-            : null,
-        onHorizontalDragEnd: isHorizontalDismissAllowed
-            ? (details) => _handleHorizontalDragEnd(context, details)
-            : null,
+        gestures: <Type, GestureRecognizerFactory<GestureRecognizer>>{
+          if (isVerticalDismissAllowed)
+            VerticalDragGestureRecognizer: GestureRecognizerFactoryWithHandlers<
+                VerticalDragGestureRecognizer>(
+              () => VerticalDragGestureRecognizer(debugOwner: this)
+                ..onlyAcceptDragOnThreshold = true,
+              (VerticalDragGestureRecognizer instance) {
+                instance
+                  ..onUpdate = _handleVerticalDragUpdate
+                  ..onEnd =
+                      (details) => _handleVerticalDragEnd(context, details);
+              },
+            ),
+          if (isHorizontalDismissAllowed)
+            HorizontalDragGestureRecognizer:
+                GestureRecognizerFactoryWithHandlers<
+                    HorizontalDragGestureRecognizer>(
+              () => HorizontalDragGestureRecognizer(debugOwner: this)
+                ..onlyAcceptDragOnThreshold = true,
+              (HorizontalDragGestureRecognizer instance) {
+                instance
+                  ..onUpdate = (details) => _handleHorizontalDragUpdate(context, details)
+                  ..onEnd = (details) => _handleHorizontalDragEnd(context, details);
+              },
+            ),
+        },
         child: child,
       ),
     );
