@@ -1,5 +1,67 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:wolt_modal_sheet/wolt_modal_sheet.dart';
+
+class _WoltModalSheetGestureDetector extends StatelessWidget {
+  const _WoltModalSheetGestureDetector({
+    required this.child,
+    this.onVerticalDragStart,
+    this.onVerticalDragUpdate,
+    this.onVerticalDragEnd,
+    this.onHorizontalDragStart,
+    this.onHorizontalDragUpdate,
+    this.onHorizontalDragEnd,
+  });
+
+  final Widget child;
+  final GestureDragStartCallback? onVerticalDragStart;
+  final GestureDragUpdateCallback? onVerticalDragUpdate;
+  final GestureDragEndCallback? onVerticalDragEnd;
+  final GestureDragStartCallback? onHorizontalDragStart;
+  final GestureDragUpdateCallback? onHorizontalDragUpdate;
+  final GestureDragEndCallback? onHorizontalDragEnd;
+
+  @override
+  Widget build(BuildContext context) {
+    final gestures = <Type, GestureRecognizerFactory<GestureRecognizer>>{};
+    if (onVerticalDragUpdate != null ||
+        onVerticalDragStart != null ||
+        onVerticalDragEnd != null) {
+      gestures[VerticalDragGestureRecognizer] =
+          GestureRecognizerFactoryWithHandlers<VerticalDragGestureRecognizer>(
+        () => VerticalDragGestureRecognizer(debugOwner: this),
+        (instance) {
+          instance
+            ..onStart = onVerticalDragStart
+            ..onUpdate = onVerticalDragUpdate
+            ..onEnd = onVerticalDragEnd
+            ..onlyAcceptDragOnThreshold = true;
+        },
+      );
+    }
+    if (onHorizontalDragUpdate != null ||
+        onHorizontalDragStart != null ||
+        onHorizontalDragEnd != null) {
+      gestures[HorizontalDragGestureRecognizer] =
+          GestureRecognizerFactoryWithHandlers<HorizontalDragGestureRecognizer>(
+        () => HorizontalDragGestureRecognizer(debugOwner: this),
+        (instance) {
+          instance
+            ..onStart = onHorizontalDragStart
+            ..onUpdate = onHorizontalDragUpdate
+            ..onEnd = onHorizontalDragEnd
+            ..onlyAcceptDragOnThreshold = true;
+        },
+      );
+    }
+
+    return RawGestureDetector(
+      excludeFromSemantics: true,
+      gestures: gestures,
+      child: child,
+    );
+  }
+}
 
 class WoltModalSheetDragToDismissDetector extends StatefulWidget {
   const WoltModalSheetDragToDismissDetector({
@@ -83,8 +145,8 @@ class _WoltModalSheetDragToDismissDetectorState
             final metrics = notification.metrics;
             final atEdge =
                 _dismissDirection == WoltModalDismissDirection.startToEnd
-                ? metrics.extentBefore <= 0.0
-                : metrics.extentAfter <= 0.0;
+                    ? metrics.extentBefore <= 0.0
+                    : metrics.extentAfter <= 0.0;
             if (atEdge) {
               _scrollDragActive = true;
               _handleHorizontalDragUpdate(context, notification.dragDetails!);
@@ -104,19 +166,27 @@ class _WoltModalSheetDragToDismissDetectorState
         }
         return true;
       },
-      child: GestureDetector(
-        excludeFromSemantics: true,
-        onVerticalDragUpdate: isVerticalDismissAllowed
-            ? (details) => _handleVerticalDragUpdate(details)
-            : null,
+      child: _WoltModalSheetGestureDetector(
+        onVerticalDragStart:
+            isVerticalDismissAllowed ? (_) => _scrollDragActive = true : null,
+        onVerticalDragUpdate:
+            isVerticalDismissAllowed ? _handleVerticalDragUpdate : null,
         onVerticalDragEnd: isVerticalDismissAllowed
-            ? (details) => _handleVerticalDragEnd(context, details)
+            ? (details) {
+                _scrollDragActive = false;
+                _handleVerticalDragEnd(context, details);
+              }
             : null,
+        onHorizontalDragStart:
+            isHorizontalDismissAllowed ? (_) => _scrollDragActive = true : null,
         onHorizontalDragUpdate: isHorizontalDismissAllowed
             ? (details) => _handleHorizontalDragUpdate(context, details)
             : null,
         onHorizontalDragEnd: isHorizontalDismissAllowed
-            ? (details) => _handleHorizontalDragEnd(context, details)
+            ? (details) {
+                _scrollDragActive = false;
+                _handleHorizontalDragEnd(context, details);
+              }
             : null,
         child: widget.child,
       ),
